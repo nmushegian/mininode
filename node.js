@@ -79,21 +79,10 @@ class Bus {
 }
 
 class Eng {
-    constructor(bus_) {
-        this.bus = bus_
-        this.mail = []
-    }
-    start() {
-        // business logic
-        setInterval(()=> {
-            this.bus.emit({ peer: 'bob', data: 'poke'})
-        }, 900)
-        setInterval(()=> {
-            let msg = this.bus.poll()
-            if (msg) {
-                this.mail.push(msg)
-            }
-        }, 500)
+    step(msg) {
+        let msg = this.bus.poll()
+        // apply to state
+        return [] // return some messages
     }
 }
 
@@ -104,11 +93,13 @@ class Node {
         this.net = new Net(peers, bus)
         this.eng = eng_
     }
-    start() {
-        this.net.start()
-        this.eng.start()
+    step() {
+        let msg = this.bus.poll()
+        let outs = this.eng.step(msg)
+        for (let out of outs) {
+            this.bus.emit(out)
+        }
     }
-
     repr() {
         return [
             this.net.repr(),
