@@ -1,33 +1,13 @@
-// every thing has a `repr` which is a concrete representation
 
-// regular queue
-class Q {
-    constructor() { this.q = [] }
-    enq(v) {
-        this.q.push(v)
-    }
-    deq() {
-        if (this.q.length == 0) {
-            return null
-        } else {
-            let head = this.q[0]
-            this.q = this.q.slice(1)
-            return head
-        }
-    }
-    repr() {
-        return this.q
-    }
-}
-
-// net mediates interactions between the bus and the network
+// net takes a peer
 // net is async and nondeterministic
 class Net {
-    constructor(peers_, bus_) {
-        this.peers = peers_
-        this.bus = bus_
+    constructor(peerDB) {
+        this.peerDB = peerDB
     }
     async run() {
+        // connect to peers from peerDB
+        //   on ann/peer, add it
         // for each peer
         //   await peer.on msg
         //     bus.push(msg)
@@ -56,7 +36,7 @@ class Eng {
     }
     turn(state, msg) {
         // implementation
-        return state
+        return [state, []]
     }
     repr() {
         return [ this.state, this.log ]
@@ -67,15 +47,14 @@ class Eng {
 // it is async and nondeterministic because it interacts with net, its job
 // is to route messages into and out of the deterministic engine
 class Node {
-    constructor(peers_, eng_) {
-        this.bus = new Bus()
-        this.net = new Net(peers, bus)
-        this.eng = eng_
+    constructor(peers) {
+        this.net = new Net(peers)
+        this.eng = new Eng()
     }
     async run() {
         this.net.start()
         while(true) {
-            let msg = await this.bus.poll()
+            let msg = await this.net.poll()
             let outs = this.eng.step(msg)
             for (let out of outs) {
                 this.bus.emit(out)
@@ -85,7 +64,6 @@ class Node {
     repr() {
         return [
             this.net.repr(),
-            this.bus.repr(),
             this.eng.repr()
         ]
     }
