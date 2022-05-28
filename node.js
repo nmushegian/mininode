@@ -21,83 +21,65 @@ class Q {
 }
 
 // net mediates interactions between the bus and the network
+// net is async and nondeterministic
 class Net {
     constructor(peers_, bus_) {
         this.peers = peers_
         this.bus = bus_
     }
-    start() {
+    async run() {
         // for each peer
-        //   peer.on msg
+        //   await peer.on msg
         //     bus.push(msg)
         // loop msg=bus.pull()
         //   if msg.type == end
         //     peers[msg.peer].ban()
         //   else
         //     peers[msg.peer].send(msg)
+        //   yield // next event loop
     }
-    repr() {
-        return [this.peers]
+    async *poll() {
     }
-}
-
-// bus is a pair of queues between the network and the engine
-class Bus {
-    constructor() {
-        this.iq = new Q() // in queue
-        this.oq = new Q() // out queue
-        this.log = []
-    }
-
-    // eng -> bus
-    emit(msg) {
-        this.log.push(['emit', msg])
-        oq.enq(msg)
-    }
-    // eng <- bus
-    poll() {
-        let msg = iq.deq()
-        this.log.push(['poll', msg])
-        return msg
-    }
-
-    // net <- bus
-    pull() {
-        let msg = oq.deq()
-        this.log.push(['pull', msg])
-        return msg
-    }
-    // net -> bus
-    push(msg) {
-        this.log.push(['push', msg])
-        this.iq.enq(msg)
-    }
-
-    repr() {
-        return [this.iq.repr(), this.oq.repr()]
+    async emit() {
     }
 }
 
+// the engine is synchronous and deterministic
 class Eng {
+    let log = []
+    let state = null
     step(msg) {
-        let msg = this.bus.poll()
-        // apply to state
-        return [] // return some messages
+        this.log.push(msg)
+        let [next, outs] = this.turn(state, msg)
+        this.state = next
+        return outs
+    }
+    turn(state, msg) {
+        // implementation
+        return state
+    }
+    repr() {
+        return [ this.state, this.log ]
     }
 }
 
-// the node is then just a kind of supervisor of the net/bus/eng abstraction
+// the node is a kind of supervisor of the net/bus/eng abstraction
+// it is async and nondeterministic because it interacts with net, its job
+// is to route messages into and out of the deterministic engine
 class Node {
     constructor(peers_, eng_) {
         this.bus = new Bus()
         this.net = new Net(peers, bus)
         this.eng = eng_
     }
-    step() {
-        let msg = this.bus.poll()
-        let outs = this.eng.step(msg)
-        for (let out of outs) {
-            this.bus.emit(out)
+    async run() {
+        this.net.start()
+        while(true) {
+            let msg = await this.bus.poll()
+            let outs = this.eng.step(msg)
+            for (let out of outs) {
+                this.bus.emit(out)
+            }
         }
     }
     repr() {
