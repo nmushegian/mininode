@@ -1,7 +1,9 @@
 
-// net takes a peer
+// net takes a peerDB
 // net is async and nondeterministic
 class Net {
+    this.iq = new Q()
+    this.oq = new Q()
     constructor(peerDB) {
         this.peerDB = peerDB
     }
@@ -10,17 +12,19 @@ class Net {
         //   on ann/peer, add it
         // for each peer
         //   await peer.on msg
-        //     bus.push(msg)
-        // loop msg=bus.pull()
+        //     iq.enq(msg)
+        // loop msg = this.oq.pop()
+        //   yield if msg is null
         //   if msg.type == end
-        //     peers[msg.peer].ban()
+        //     msg.from.ban()
         //   else
-        //     peers[msg.peer].send(msg)
-        //   yield // next event loop
+        //     msg.from.send(msg)
     }
     async *poll() {
+        yield this.iq.deq()
     }
-    async emit() {
+    emit(msg) {
+        this.oq.enq(msg)
     }
 }
 
