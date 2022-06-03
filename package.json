@@ -1,0 +1,27 @@
+{
+  "name": "mininode",
+  "version": "1.0.0",
+  "main": "node.js",
+  "scripts": {
+    "test": "npx mocha test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kbrav/mininode.git"
+  },
+  "author": "",
+  "type": "module",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kbrav/mininode/issues"
+  },
+  "homepage": "https://github.com/kbrav/mininode#readme",
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "mocha": "^9.2.2"
+  },
+  "description": "",
+  "dependencies": {
+    "debug": "^4.3.4"
+  }
+}

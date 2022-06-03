@@ -1,23 +1,28 @@
 // engine
 
-class Djin {
-    let _tree
-    let desk
+export class Djin {
     constructor(datadesk) {
-        _tree = datadesk
+        this._tree = datadesk
+        this.desk  = datadesk
+        this.nturns = 0
     }
+
     // override
     // desk is a purely functional set handle mutable handle
     // you have access to _tree if you want to switch branches
     // just load, modify, and return the new system state you want
     // without fear
+
     turn(desk, mail) {
-        throw new Error(`unimplemented override`)
+        this.nturns++
+        return [[], []]
+        //throw new Error(`unimplemented override`)
     }
+
     // called by dmon
     _turn(mail) {
-        let [desk, outs] = turn(this.desk, mail)
-        this.desk = _tree.save(desk)
+        let [desk, outs] = this.turn(this.desk, mail)
+        //this.desk = this._tree.save(desk)
         return outs
     }
 }
