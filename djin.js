@@ -1,4 +1,6 @@
 // engine
+import Debug from 'debug'
+const debug = Debug('test::djin')
 
 export class Djin {
     constructor(datadesk) {
@@ -14,7 +16,7 @@ export class Djin {
     // without fear
 
     turn(desk, mail) {
-        this.nturns++
+        debug(`turn (nturns=${this.nturns++}`)
         return [[], []]
         //throw new Error(`unimplemented override`)
     }

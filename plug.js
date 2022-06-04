@@ -25,7 +25,11 @@ export class Plug {
     when(mailbox) {
         this.server = http.createServer(function (req, res) {
             //debug(req)
-            mailbox(req)
+            let mail
+            req.on('data', (chunk) => {
+                mail = JSON.parse(chunk)
+                mailbox(mail)
+            })
             res.end()
         }).listen(this.port)
         // http.server.onMessage(msg => { mailbox(msg) } )
@@ -55,8 +59,8 @@ export class Plug {
             })
             req.write(json)
             req.end()
-
         }
+
         switch(type.slice(0, 3)) {
             case 'end': {
                 if (peer.indexOf(',') != -1) {
