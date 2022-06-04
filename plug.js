@@ -14,6 +14,10 @@ export class Plug {
         debug(`created plug with pubkey ${this.pubkey}`)
     }
     setPeer(pk, addr, port) { this.peers[pk] = [addr, port] }
+    drop(p) {
+        this.peers[p] = undefined
+        this.actives = this.actives.filter(p => p != peer)
+    }
     setServers(actives) { this.actives = actives }
     stop() {
         if (this.server == undefined) {
@@ -36,9 +40,6 @@ export class Plug {
     }
     send(mail) {
         // http.request(..., mail)
-        const peer = mail[0]
-        const type = mail[1]
-        const [addr, port] = this.peers[peer]
 
         const json = JSON.stringify(mail)
         const post = (addr, port) => {
@@ -61,15 +62,18 @@ export class Plug {
             req.end()
         }
 
+        const peer = mail[0]
+        const type = mail[1]
         switch(type.slice(0, 3)) {
             case 'end': {
+                let [addr, port] = this.peers[peer]
+
                 if (peer.indexOf(',') != -1) {
                     console.error('end: can only drop one peer at a time')
                 }
                 post(addr, port)
                 // drop peer
-                this.peers[peer] = undefined
-                this.actives = this.actives.filter(p => p != peer)
+                this.drop(peer)
                 break
             }
             case 'ann': {
@@ -77,13 +81,15 @@ export class Plug {
                     console.error('ann: peer should be empty string')
                     break
                 }
-                for (let pk in Object.keys(this.peers)) {
+                for (let pk of Object.keys(this.peers)) {
                     const [addr, port] = this.peers[pk]
                     post(addr, port)
                 }
                 break
             }
             case 'req': {
+                let [addr, port] = this.peers[peer]
+
                 const peers = peer.split(',')
                 for (let peer in peers) {
                     const [addr, port] = this.peers[pk]
@@ -92,6 +98,8 @@ export class Plug {
                 break
             }
             case 'res': {
+                let [addr, port] = this.peers[peer]
+
                 if (peer.indexOf(',') != -1) {
                     console.error('res: can only drop one peer at a time')
                 }
