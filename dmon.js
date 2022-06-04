@@ -1,36 +1,20 @@
 // daemon
 
-class Dmon {
+export class Dmon {
     constructor(djin, plug) {
         this.djin = djin
         this.plug = plug
         this.log = []
-        this.iq = []
-        this.oq = []
     }
-    step() {
-        let mail = iq.pop()
+    mailbox(mail, echo) {
+        this.log.push(['i', mail])
         let outs = this.djin.turn(mail)
-        this.oq = [...outs, ...this.oq]
-    }
-    async *spin() {
-        if (this.iq.length > 0) {
-            this.step()
-        } else {
-            yield
+        for( let out of outs) {
+            this.log.push(['o', out])
+            echo(out)
         }
     }
     async play() {
-        this.plug.when(mail => {
-            this.log.push(['i', mail])
-            this.iq = [mail, ...this.iq]
-        })
-        setInterval(() => {
-            let outs = this.oq; this.oq = []; // flush
-            for (let out of outs) {
-                this.plug.send(out)
-            }
-        }, 1000)
-        spin()
+        this.plug.open(4000, this.mailbox)
     }
 }

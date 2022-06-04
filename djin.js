@@ -1,6 +1,6 @@
 // engine
 
-class Djin {
+export class Djin {
     constructor(tree) {
         this.tree = tree
         this.nonc = 0
