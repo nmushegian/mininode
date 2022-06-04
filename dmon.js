@@ -1,20 +1,22 @@
 // daemon
 
+import * as uws from 'uWebSockets.js'
+
 export class Dmon {
-    constructor(djin, plug) {
+    constructor(djin) {
         this.djin = djin
-        this.plug = plug
         this.log = []
     }
-    mailbox(mail, echo) {
-        this.log.push(['i', mail])
-        let outs = this.djin.turn(mail)
-        for( let out of outs) {
-            this.log.push(['o', out])
-            echo(out)
-        }
-    }
-    async play() {
-        this.plug.open(4000, this.mailbox)
+    async play(port) {
+        let net = uws.App({}).ws('/*', {
+            message: (ws, mail) => {
+                this.log.push(['i', mail])
+                let outs = this.djin.turn(mail)
+                for (let out of outs) {
+                    this.log.push(['o', out])
+                    ws.send(out)
+                }
+            }
+        }).listen(port, console.log)
     }
 }
