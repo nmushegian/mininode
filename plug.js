@@ -76,21 +76,14 @@ export class Plug {
                 this.drop(peer)
                 break
             }
+            case 'req':
             case 'ann': {
                 if (peer != '') {
-                    console.error('ann: peer should be empty string')
+                    console.error('ann / req: peer should be empty string')
                     break
                 }
                 for (let pk of Object.keys(this.peers)) {
                     const [addr, port] = this.peers[pk]
-                    post(addr, port)
-                }
-                break
-            }
-            case 'req': {
-                const peers = peer.split(',')
-                for (let peer of peers) {
-                    const [addr, port] = this.peers[peer]
                     post(addr, port)
                 }
                 break

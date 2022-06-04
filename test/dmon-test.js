@@ -62,7 +62,7 @@ describe('dmon', () => {
         })
 
         it('req', async () => {
-            const mail = [bob.plug.pubkey+','+cat.plug.pubkey, 'req/aew782i181', '']
+            const mail = ['', 'req/aew782i181', '']
             ali.plug.send(mail)
             const prev = await spin(() => bob.prev)
             want(prev).to.eql(mail)
