@@ -88,11 +88,9 @@ export class Plug {
                 break
             }
             case 'req': {
-                let [addr, port] = this.peers[peer]
-
                 const peers = peer.split(',')
-                for (let peer in peers) {
-                    const [addr, port] = this.peers[pk]
+                for (let peer of peers) {
+                    const [addr, port] = this.peers[peer]
                     post(addr, port)
                 }
                 break

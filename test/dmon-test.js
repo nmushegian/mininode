@@ -38,6 +38,7 @@ describe('dmon', () => {
     describe('basic', () => {
         beforeEach(async () => {
             ali.plug.setPeer(bob.plug.pubkey, localhost, 10335)
+            ali.plug.setPeer(cat.plug.pubkey, localhost, cat.plug.port)
         })
         it('end', async () => {
             debug(`end @${ali.plug.pubkey} -> @${bob.plug.pubkey}`)
@@ -50,15 +51,28 @@ describe('dmon', () => {
 
         it('ann', async () => {
             // TODO ann subset
-            ali.plug.setPeer(cat.plug.pubkey, localhost, cat.plug.port)
             debug(`ann ${ali.plug.pubkey} -> ${bob.plug.pubkey}, ${cat.plug.pubkey}`)
             const mail = ['', 'ann1893789wrusoilfoui89vs89', '']
             ali.plug.send(mail)
-            want(ali.plug.peers[bob.plug.pubkey]).to.eql([localhost, bob.plug.port])
             for (const dmon of [bob, cat]) {
+                want(ali.plug.peers[dmon.plug.pubkey]).to.eql([localhost, dmon.plug.port])
                 const prev = await spin(() => dmon.prev)
                 want(prev).to.eql(mail)
             }
+        })
+
+        it('req', async () => {
+            const mail = [bob.plug.pubkey+','+cat.plug.pubkey, 'req/aew782i181', '']
+            ali.plug.send(mail)
+            const prev = await spin(() => bob.prev)
+            want(prev).to.eql(mail)
+        })
+
+        it('res', async () => {
+            const mail = [bob.plug.pubkey, 'res/aew782i181', '']
+            ali.plug.send(mail)
+            const prev = await spin(() => bob.prev)
+            want(prev).to.eql(mail)
         })
     })
 });
