@@ -1,15 +1,13 @@
 // engine
 
 export class Djin {
-    constructor(tree) {
-        this.tree = tree
-        this.nonc = 0
+    constructor() {
+        this.log = []
     }
     turn(mail) {
-        let outs = []
-        this.tree.edit(this.nonc, this.nonc++, db => {
-            // do stuff
-        })
-        return outs
+        this.log.push(['i', mail])
+        let back = ['ack', mail]
+        this.log.push(['o', back])
+        return back
     }
 }
