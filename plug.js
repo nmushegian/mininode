@@ -1,9 +1,9 @@
 
 // transport plugin
-import http from 'http'
+import { Server } from "socket.io"
+import { io } from "socket.io-client"
 import Debug from 'debug'
 const debug = Debug('test::plug')
-
 
 export class Plug {
     constructor(port) {
@@ -27,39 +27,19 @@ export class Plug {
     }
     // when( mailbox : msg -> () )
     when(mailbox) {
-        this.server = http.createServer(function (req, res) {
-            //debug(req)
-            let mail
-            req.on('data', (chunk) => {
-                mail = JSON.parse(chunk)
+        this.server = new Server(this.port)
+        this.server.on("connection", (socket) => {
+            socket.once("minicash", (mail) => {
                 mailbox(mail)
+                socket.disconnect()
             })
-            res.end()
-        }).listen(this.port)
-        // http.server.onMessage(msg => { mailbox(msg) } )
+        })
     }
     send(mail) {
-        // http.request(..., mail)
-
         const json = JSON.stringify(mail)
         const post = (addr, port) => {
-            const options = {
-                hostname: addr,
-                port,
-                method: 'POST',
-                headers: {
-                    'Content-type': 'application/json',
-                    'Content-Length': json.length
-                }
-            }
-            const req = http.request(options, res => {
-                debug(`statusCode: ${res.statusCode}`)
-            })
-            req.on('error', error => {
-                console.error(error)
-            })
-            req.write(json)
-            req.end()
+            const socket = io('http://'+addr + ':' + port)
+            socket.timeout(5000).emit('minicash', mail)
         }
 
         const peer = mail[0]

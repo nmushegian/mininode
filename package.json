@@ -22,6 +22,8 @@
   },
   "description": "",
   "dependencies": {
-    "debug": "^4.3.4"
+    "debug": "^4.3.4",
+    "socket.io": "^4.5.1",
+    "socket.io-client": "^4.5.1"
   }
 }
