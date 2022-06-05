@@ -64,8 +64,11 @@ describe('dmon', () => {
         it('req', async () => {
             const mail = ['', 'req/aew782i181', '']
             ali.plug.send(mail)
-            const prev = await spin(() => bob.prev)
-            want(prev).to.eql(mail)
+            for (const dmon of [bob, cat]) {
+                want(ali.plug.peers[dmon.plug.pubkey]).to.eql([localhost, dmon.plug.port])
+                const prev = await spin(() => dmon.prev)
+                want(prev).to.eql(mail)
+            }
         })
 
         it('res', async () => {
