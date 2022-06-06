@@ -3,6 +3,7 @@
 import * as hapi from '@hapi/hapi'
 import fetch from 'node-fetch'
 
+
 export { Plug, HapiPlug }
 
 class Plug {
@@ -29,6 +30,7 @@ class HapiPlug extends Plug {
         super()
         this.point = { host, port }
         this.peers = {self: { url: `http://${host}:${port}`}}
+        this._init = false
     }
     async when(what) {
         this.serv = hapi.server(this.point)
@@ -60,11 +62,39 @@ class HapiPlug extends Plug {
     }
 }
 
-class PureHttpPlug extends Plug {
+import purehttp from 'pure-http'
+import { raw, text } from 'milliparsec'
+import { roll, unroll, rmap } from './deps/coreword/dist/word.js'
+
+export class PureHttpPlug extends Plug {
     constructor({ host, port }) {
         super()
         this.host = host
         this.port = port
         this.peers = {self: {url: `http://${host}:${port}`}}
+    }
+    async when(what) {
+        this.serv = purehttp()
+        await this.serv.use(text())
+        await this.serv.all('/', (req, res) => {
+            let body = unroll(Buffer.from(req.body, 'hex'))
+            let back = what(req.body)
+            let rollhex = roll(back).toString('hex')
+            res.send(rollhex)
+        })
+    }
+    async play() {
+        await this.serv.listen(this.port)
+    }
+    async stop() {
+        await this.serv.close()
+    }
+    async send(peer, mail) {
+        let post = roll(rmap(mail, Buffer.from)).toString('hex')
+        let { url } = this.peers[peer]
+        let res = await fetch(url, { method: 'POST', body: post } )
+        let body = await res.text()
+        let r = unroll(Buffer.from(body, 'hex'))
+        return r
     }
 }

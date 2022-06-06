@@ -5,6 +5,9 @@
   },
   "dependencies": {
     "@hapi/hapi": "^20.2.2",
-    "node-fetch": "^3.2.5"
+    "coreword": "^0.0.5",
+    "milliparsec": "^2.2.2",
+    "node-fetch": "^3.2.5",
+    "pure-http": "^3.3.1"
   }
 }
