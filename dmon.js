@@ -1,3 +1,4 @@
+
 // daemon
 
 export class Dmon {
@@ -5,8 +6,14 @@ export class Dmon {
         this.djin = djin
         this.plug = plug
     }
-    async play() {
+    async init() {
+        process.on('unhandledRejection', err => {
+            console.log(err); process.exit(1)
+        })
         await this.plug.when(mail => this.djin.turn(mail))
+    }
+    async play() {
+        await this.plug.play()
     }
     async send(peer, mail) {
         return await this.plug.send(peer, mail)

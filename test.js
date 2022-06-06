@@ -14,6 +14,7 @@ test('http plug', async t=>{
     let plug = new HapiPlug({ host: 'localhost', port: 7117})
     let djin = new Djin()
     let dmon = new Dmon(djin, plug)
+    await dmon.init()
     await dmon.play()
     let back = await dmon.send('self', ['ann/peer', 'hello'])
     t.equal(back[0], 'ack')

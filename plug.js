@@ -6,6 +6,9 @@ import fetch from 'node-fetch'
 export { Plug, HapiPlug }
 
 class Plug {
+    async play() {
+        console.log(`plug.play()`)
+    }
     // resolve when connection has been closed
     async kill() {
         console.log(`plug.kill()`)
@@ -24,17 +27,11 @@ class Plug {
 class HapiPlug extends Plug {
     constructor({ host, port }) {
         super()
-        this.host = host
-        this.port = port
+        this.point = { host, port }
         this.peers = {self: { url: `http://${host}:${port}`}}
     }
     async when(what) {
-        process.on('unhandledRejection', err => {
-            console.log(err); process.exit(1)
-        })
-        this.serv = hapi.server({
-            host: this.host, port: this.port
-        })
+        this.serv = hapi.server(this.point)
         this.serv.route({
             method: '*',
             path: '/{any*}',
@@ -44,8 +41,6 @@ class HapiPlug extends Plug {
                 return back
             }
         })
-        await this.serv.start()
-        console.log(`listening on ${this.serv.info.uri}`)
     }
     async send(peer, mail) {
         let post = JSON.stringify(mail)
@@ -56,8 +51,20 @@ class HapiPlug extends Plug {
         console.log('body', body)
         return body
     }
+    async play() {
+        await this.serv.start()
+        console.log(`listening on ${this.serv.info.uri}`)
+    }
     async stop() {
-        this.serv.stop()
+        await this.serv.stop()
     }
 }
 
+class PureHttpPlug extends Plug {
+    constructor({ host, port }) {
+        super()
+        this.host = host
+        this.port = port
+        this.peers = {self: {url: `http://${host}:${port}`}}
+    }
+}
