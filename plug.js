@@ -1,6 +1,7 @@
 // network plugin
 
 import * as hapi from '@hapi/hapi'
+import fetch from 'node-fetch'
 
 export { Plug, HapiPlug }
 
@@ -25,6 +26,7 @@ class HapiPlug extends Plug {
         super()
         this.host = host
         this.port = port
+        this.peers = {self: { url: `http://${host}:${port}`}}
     }
     async when(what) {
         process.on('unhandledRejection', err => {
@@ -37,8 +39,7 @@ class HapiPlug extends Plug {
             method: '*',
             path: '/{any*}',
             handler: (request) => {
-                console.log(request)
-                let data = request.payload
+                let data = JSON.parse(request.payload)
                 let back = what(data)
                 return back
             }
@@ -46,7 +47,17 @@ class HapiPlug extends Plug {
         await this.serv.start()
         console.log(`listening on ${this.serv.info.uri}`)
     }
-    async send() {
+    async send(peer, mail) {
+        let post = JSON.stringify(mail)
+        console.log(`send(${peer}, ${post})`)
+        let { url } = this.peers[peer]
+        let res = await fetch(url, { method: 'POST', body: post } )
+        let body = await res.json()
+        console.log('body', body)
+        return body
+    }
+    async stop() {
+        this.serv.stop()
     }
 }
 

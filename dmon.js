@@ -6,9 +6,12 @@ export class Dmon {
         this.plug = plug
     }
     async play() {
-        this.plug.when(mail => this.djin.turn(mail))
+        await this.plug.when(mail => this.djin.turn(mail))
     }
     async send(peer, mail) {
-        this.plug.send(peer, mail)
+        return await this.plug.send(peer, mail)
+    }
+    async stop() {
+        return await this.plug.stop()
     }
 }
