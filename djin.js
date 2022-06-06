@@ -6,7 +6,6 @@ export class Djin {
     constructor(datadesk) {
         this._tree = datadesk
         this.desk  = datadesk
-        this.nturns = 0
     }
 
     // override

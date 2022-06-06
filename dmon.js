@@ -6,6 +6,7 @@
 import http from 'http'
 import Debug from 'debug'
 const debug = Debug('test::dmon')
+import rlp from 'rlp'
 
 export class Dmon {
     constructor(djin, plug) {
@@ -21,7 +22,9 @@ export class Dmon {
             }
             const ty = mail[1].slice(0, 3)
             if (ty == 'res' || ty == 'ann') {
-                this.djin._turn(mail)
+                const decoded = [mail[0], mail[1], rlp.decode(mail[3])]
+                this.djin._turn(decoded)
+                this.turnt = decoded
             }
             this.prev = mail
         })
