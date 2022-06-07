@@ -43,16 +43,6 @@ for (const PlugType of [SockPlug, HapiPlug, PureHttpPlug]) {
 
         const fmt = (x) => rlp.decode(rlp.encode(x))
         const fmtmail = (mail) => [mail[0], fmt(mail[1])]
-        /*
-        const decode = (mail) => {
-            return [mail[0], rlp.decode(fmt(mail[1]))]
-        }
-
-        const encode = (mail) => {
-            return [mail[0], fmt(rlp.encode(mail[1]))]
-        }
-
-         */
 
         describe('basic', () => {
             beforeEach(async () => {
