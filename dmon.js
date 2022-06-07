@@ -1,12 +1,8 @@
-// daemon
-
-// new Dmon(cash.djin, http)
-// dmon.task(cash.sync)
-// await dmon.serve()
-import http from 'http'
 import Debug from 'debug'
 const debug = Debug('test::dmon')
 import rlp from 'rlp'
+
+// daemon
 
 export class Dmon {
     constructor(djin, plug) {
@@ -14,22 +10,27 @@ export class Dmon {
         this.plug = plug
         this.nmsgs = 0
     }
-    serve() {
-        this.plug.when((mail) => {
+    async init() {
+        await this.plug.when_(mail => {
+            debug(`mailbox`)
             debug(`msg @${this.plug.pubkey}, nmsgs=${this.nmsgs++}`)
-            if (mail.length != 3) {
-                console.error('mailbox: bad mail length')
-            }
-            const ty = mail[1].slice(0, 3)
+            const ty = mail[0].slice(0, 3)
+            let res = {}
             if (ty == 'res' || ty == 'ann') {
-                const decoded = [mail[0], mail[1], rlp.decode(mail[3])]
-                this.djin._turn(decoded)
-                this.turnt = decoded
+                res = this.djin.turn(mail)
+                this.turnt = mail
             }
             this.prev = mail
+            return res
         })
     }
-    async task(f) {
-        while (await f()) {}
+    async play() {
+        await this.plug.play()
+    }
+    async send(peer, mail) {
+        return await this.plug.send(peer, mail)
+    }
+    async stop() {
+        return await this.plug.stop()
     }
 }
