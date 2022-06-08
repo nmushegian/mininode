@@ -45,6 +45,7 @@ class Plug {
 
     async when_(mailbox_) {
         const mailbox = (mail_) => {
+            console.log("MAILBOX", mail_, typeof(mail_))
             const mail = JSON.parse(mail_)
             if (mail.length != 2) {
                 console.error('when_: bad mail length')
@@ -154,18 +155,15 @@ class HapiPlug extends Plug {
             method: '*',
             path: '/{any*}',
             handler: (request) => {
-                let data = JSON.parse(request.payload)
-                let back = what(data)
+                let back = what(request.payload)
                 return back
             }
         })
     }
     async post(host, port, mail) {
-        let post = JSON.stringify(mail)
         const url = 'http://'+host+':'+port
-        let res = await fetch(url, { method: 'POST', body: post } )
+        let res = await fetch(url, { method: 'POST', body: mail } )
         let body = await res.json()
-        console.log('body', body)
         return body
     }
     async play() {
@@ -184,9 +182,6 @@ import { raw, text } from 'milliparsec'
 class PureHttpPlug extends Plug {
     async when(what) {
         await this.serv.all('/', (req, res) => {
-            const parsed = JSON.parse(req.body)
-            const unrolled = unroll(Buffer.from(parsed[1], 'hex'))
-            let body = [parsed[0], unrolled]
             let back = what(req.body)
             let rollhex = roll(back).toString('hex')
             res.send(rollhex)

@@ -1,6 +1,5 @@
 // engine
 import Debug from 'debug'
-const debug = Debug('test::djin')
 
 export class Djin {
     constructor() {
