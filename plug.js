@@ -1,59 +1,173 @@
 // network plugin
-
+import { roll, unroll, rmap } from './deps/coreword/dist/word.js'
 import * as hapi from '@hapi/hapi'
 import fetch from 'node-fetch'
+import assert from 'assert'
+import Debug from 'debug'
+const debug = Debug('test::plug')
 
-
-export { Plug, HapiPlug }
+export { Plug, SockPlug, HapiPlug, PureHttpPlug }
 
 class Plug {
+    constructor(host, port) {
+        this.point = {host, port}
+        this.peers = {}
+        this.actives = []
+        this.pubkey = String(Math.floor(Math.random() * 1000000000))
+        debug(`created plug with pubkey ${this.pubkey}`)
+    }
+
+    setPeer(pk, host, port) {
+        this.peers[pk] = {host, port}
+    }
+
+    drop(p) {
+        this.peers[p] = undefined
+        this.actives = this.actives.filter(p => p != peer)
+    }
+
+    setActives(actives) {
+        this.actives = actives
+    }
+
+
     async play() {
-        console.log(`plug.play()`)
+        console.error('play: unimplemented')
+        assert(false)
     }
-    // resolve when connection has been closed
-    async kill() {
-        console.log(`plug.kill()`)
-    }
+
     // resolve when handler is wired up and active
     // when : (what:(mail:blob -> back:blob))
     async when(what) {
-        console.log(`plug.when(..., ...)`)
+        console.error('when: unimplemented')
+        assert(false)
     }
+
+    async when_(mailbox_) {
+        const mailbox = (mail_) => {
+            console.log("MAILBOX", mail_, typeof(mail_))
+            const mail = JSON.parse(mail_)
+            if (mail.length != 2) {
+                console.error('when_: bad mail length')
+                return
+            }
+            const type = mail[0]
+            const body = mail[1]
+            const decoded = unroll(new Uint8Array(body.data))
+            const res = mailbox_([type, decoded])
+            this.prev = mail_
+            return res
+        }
+        await this.when(mailbox)
+    }
+
+    async post(host, port, mail) {
+        console.error('post: unimplemented')
+        assert(false)
+    }
+
     async send(peer, mail) {
-        console.log(`plug.send(${peer}, ${mail})`)
+        if (mail.length != 2) {
+            console.error(`send: bad mail length`)
+            return
+        }
+
+        const type = mail[0]
+        const json = JSON.stringify([type, roll(mail[1])])
+        switch (type.slice(0, 3)) {
+            case 'end': {
+                let {host, port} = this.peers[peer]
+
+                if (peer.indexOf(',') != -1) {
+                    console.error('end: can only drop one peer at a time')
+                }
+                await this.post(host, port, json)
+                // drop peer
+                this.drop(peer)
+                break
+            }
+            case 'req':
+            case 'ann': {
+                if (peer != '') {
+                    console.error('ann / req: peer should be empty string')
+                    break
+                }
+                for (let pk of Object.keys(this.peers)) {
+                    const {host, port} = this.peers[pk]
+                    await this.post(host, port, json)
+                }
+                break
+            }
+            case 'res': {
+                let {host, port} = this.peers[peer]
+
+                if (peer.indexOf(',') != -1) {
+                    console.error('res: can only drop one peer at a time')
+                }
+                await this.post(host, port, json)
+            }
+        }
+    }
+
+    async stop() {
+        console.error('stop: unimplemented')
+        assert(false)
+    }
+}
+
+import {Server} from 'socket.io'
+import {io} from 'socket.io-client'
+class SockPlug extends Plug {
+
+    async post(host, port, mail) {
+        const socket = io('http://' + host + ':' + port)
+        socket.timeout(5000).emit('minicash', mail)
+        debug(`post ${host} ${port} ${mail}`)
+    }
+
+    stop() {
+        if (this.server == undefined) {
+            console.error('stop: no listener open')
+        }
+        this.server.close()
+    }
+
+    async play() {
+        debug(`server @${this.point.port}`)
+        this.server = new Server(this.point.port)
+    }
+
+    // when( mailbox : msg -> () )
+    when(mailbox) {
+        this.server.on("connection", (socket) => {
+            socket.once("minicash", (mail) => {
+                mailbox(mail)
+                socket.disconnect()
+            })
+        })
     }
 }
 
 
 class HapiPlug extends Plug {
-    constructor({ host, port }) {
-        super()
-        this.point = { host, port }
-        this.peers = {self: { url: `http://${host}:${port}`}}
-        this._init = false
-    }
     async when(what) {
-        this.serv = hapi.server(this.point)
         this.serv.route({
             method: '*',
             path: '/{any*}',
             handler: (request) => {
-                let data = JSON.parse(request.payload)
-                let back = what(data)
+                let back = what(request.payload)
                 return back
             }
         })
     }
-    async send(peer, mail) {
-        let post = JSON.stringify(mail)
-        console.log(`send(${peer}, ${post})`)
-        let { url } = this.peers[peer]
-        let res = await fetch(url, { method: 'POST', body: post } )
+    async post(host, port, mail) {
+        const url = 'http://'+host+':'+port
+        let res = await fetch(url, { method: 'POST', body: mail } )
         let body = await res.json()
-        console.log('body', body)
         return body
     }
     async play() {
+        this.serv = hapi.server(this.point)
         await this.serv.start()
         console.log(`listening on ${this.serv.info.uri}`)
     }
@@ -64,35 +178,26 @@ class HapiPlug extends Plug {
 
 import purehttp from 'pure-http'
 import { raw, text } from 'milliparsec'
-import { roll, unroll, rmap } from './deps/coreword/dist/word.js'
 
-export class PureHttpPlug extends Plug {
-    constructor({ host, port }) {
-        super()
-        this.host = host
-        this.port = port
-        this.peers = {self: {url: `http://${host}:${port}`}}
-    }
+class PureHttpPlug extends Plug {
     async when(what) {
-        this.serv = purehttp()
-        await this.serv.use(text())
         await this.serv.all('/', (req, res) => {
-            let body = unroll(Buffer.from(req.body, 'hex'))
             let back = what(req.body)
             let rollhex = roll(back).toString('hex')
             res.send(rollhex)
         })
     }
     async play() {
-        await this.serv.listen(this.port)
+        this.serv = purehttp()
+        await this.serv.listen(this.point.port)
+        await this.serv.use(text())
     }
     async stop() {
         await this.serv.close()
     }
-    async send(peer, mail) {
-        let post = roll(rmap(mail, Buffer.from)).toString('hex')
-        let { url } = this.peers[peer]
-        let res = await fetch(url, { method: 'POST', body: post } )
+    async post(host, port, mail) {
+        const url = 'http://'+host+':'+port
+        let res = await fetch(url, { method: 'POST', body: mail } )
         let body = await res.text()
         let r = unroll(Buffer.from(body, 'hex'))
         return r

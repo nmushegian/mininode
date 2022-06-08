@@ -1,4 +1,5 @@
 // engine
+import Debug from 'debug'
 
 export class Djin {
     constructor() {

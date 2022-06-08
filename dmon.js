@@ -1,3 +1,6 @@
+import Debug from 'debug'
+const debug = Debug('test::dmon')
+import rlp from 'rlp'
 
 // daemon
 
@@ -5,12 +8,21 @@ export class Dmon {
     constructor(djin, plug) {
         this.djin = djin
         this.plug = plug
+        this.nmsgs = 0
     }
     async init() {
-        process.on('unhandledRejection', err => {
-            console.log(err); process.exit(1)
+        await this.plug.when_(mail => {
+            debug(`mailbox`)
+            debug(`msg @${this.plug.pubkey}, nmsgs=${this.nmsgs++}`)
+            const ty = mail[0].slice(0, 3)
+            let res = {}
+            if (ty == 'res' || ty == 'ann') {
+                res = this.djin.turn(mail)
+                this.turnt = mail
+            }
+            this.prev = mail
+            return res
         })
-        await this.plug.when(mail => this.djin.turn(mail))
     }
     async play() {
         await this.plug.play()
